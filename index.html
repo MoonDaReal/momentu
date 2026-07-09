@@ -542,7 +542,8 @@
       border-bottom:1.5px solid var(--border);
     }
     .admin-order-table tbody td { padding:var(--space-3) var(--space-4); border-bottom:1px solid var(--border-light); color:var(--text-primary); vertical-align:middle; }
-    .admin-order-table tbody tr:hover { background:rgba(var(--orange-rgb),0.02); }
+    .admin-order-table tbody tr { cursor:pointer; transition: background var(--duration-fast); }
+    .admin-order-table tbody tr:hover { background:rgba(var(--orange-rgb),0.03); }
     .admin-order-table tbody tr:last-child td { border-bottom:none; }
     .status-badge { display:inline-flex; align-items:center; gap:var(--space-1); padding:var(--space-1) var(--space-3); border-radius:var(--radius-full); font-size:0.6875rem; font-weight:600; }
     .status-badge.received { background:rgba(245,158,11,0.12); color:#f59e0b; }
@@ -813,18 +814,7 @@
           </div>
           <div class="admin-table-wrapper">
             <table class="admin-order-table" id="adminOrderTable">
-              <thead><tr>
-                <th scope="col">#ID</th>
-                <th scope="col"><span data-key="customer">Customer</span></th>
-                <th scope="col"><span data-key="items">Items</span></th>
-                <th scope="col"><span data-key="qty">Qty</span></th>
-                <th scope="col"><span data-key="note_col">Note</span></th>
-                <th scope="col"><span data-key="total">Total</span></th>
-                <th scope="col"><span data-key="status">Status</span></th>
-                <th scope="col">Time</th>
-                <th scope="col">⭐ Review</th>
-                <th scope="col"><span data-key="action">Action</span></th>
-              </tr></thead>
+              <thead><tr><th scope="col">#ID</th><th scope="col"><span data-key="customer">Customer</span></th><th scope="col"><span data-key="items">Items</span></th><th scope="col"><span data-key="qty">Qty</span></th><th scope="col"><span data-key="note_col">Note</span></th><th scope="col"><span data-key="total">Total</span></th><th scope="col"><span data-key="status">Status</span></th><th scope="col">Time</th><th scope="col">⭐ Review</th><th scope="col"><span data-key="action">Action</span></th></tr></thead>
               <tbody id="adminOrderList"></tbody>
             </table>
           </div>
@@ -928,12 +918,36 @@
     </div>
   </div>
 
+  <!-- Order Confirmation Modal -->
+  <div class="modal-overlay" id="orderConfirmModal" role="dialog" aria-modal="true" aria-labelledby="orderConfirmTitle">
+    <div class="modal">
+      <h2 id="orderConfirmTitle" style="color:var(--orange);"><i class="fas fa-check-circle"></i> <span data-key="confirmTitle">Order Confirmed!</span></h2>
+      <p class="sub" id="orderConfirmMessage"></p>
+      <div id="orderConfirmDetails" style="margin-bottom:var(--space-4); font-size:var(--text-sm); color:var(--text-secondary); line-height:1.8;"></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="orderConfirmClose"><span data-key="closeBtn">Close</span></button>
+        <button class="btn-confirm" id="orderConfirmAgain"><i class="fas fa-redo"></i> <span data-key="orderAgain">Order Again</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Details Modal (Admin) -->
+  <div class="modal-overlay" id="orderDetailModal" role="dialog" aria-modal="true" aria-labelledby="orderDetailTitle">
+    <div class="modal">
+      <h2 id="orderDetailTitle"><i class="fas fa-info-circle" style="color:var(--orange);"></i> <span data-key="orderDetailTitle">Order Details</span></h2>
+      <div id="orderDetailContent" style="font-size:var(--text-sm); color:var(--text-secondary); line-height:1.7;"></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="orderDetailClose"><span data-key="closeBtn">Close</span></button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast-container" id="toastContainer" aria-live="polite" role="status"></div>
 
   <!-- ===================== JAVASCRIPT ===================== -->
   <script>
     // ═══════════════════════════════════════════════════════════════
-    // MOMENTU 2.0 · Full Application Logic
+    // MOMENTU 2.0 · Full Application Logic (with extended checkout & admin order details)
     // Designed & Developed by: Ross Nguyen
     // Year: 2026 | Copyright: MomentU
     // ═══════════════════════════════════════════════════════════════
@@ -979,7 +993,8 @@
         combo3:'Any 3 Items', save50:'Save ¥50', comboExample2:'e.g. 3× Teriyaki Chicken = ¥700',
         addonLabel:'Upgrade Your Meal', addonTitle:'Complete Your Meal', addonSub:'Add a side to make it a full experience.',
         misoSoup:'Miso Soup', tea:'Tea',
-        cartLabel:'Your Order', cartTitle:'Cart', checkout:'Place Order', emptyCart:'Your cart is empty', emptyCartSub:'Browse the menu to get started!',
+        cartLabel:'Your Order', cartTitle:'Cart',
+        checkout:'Place Order', emptyCart:'Your cart is empty', emptyCartSub:'Browse the menu to get started!',
         orderLabel:'History', orderTitle:'Your Orders', emptyOrders:'No orders yet', emptyOrdersSub:'Place your first order!',
         locLabel:'Visit Us', locTitle:'Find Us', locAddress:'1-2-3 University Street, Tokyo, Japan', locPhone:'+81 3-1234-5678', locEmail:'hello@momentu.jp', locTransport:'3 min walk from University Station', locHours:'Open Everyday · 24 Hours · Freshly Prepared',
         footerBrand:'Fresh, customizable onigirazu made daily with premium ingredients.', footerQuickLinks:'Quick Links', footerMenu:'Menu', footerHow:'How It Works', footerCombo:'Combos', footerLocation:'Location',
@@ -996,7 +1011,7 @@
         toastStatusUpdated:'Order #%s status updated to %s', toastReviewSubmitted:'⭐ Thanks for your review!',
         toastSelectRating:'Please select a rating!', toastNewOrder:'🛎️ New order! Check Admin.', toastCartCleaned:'Removed unavailable items.',
         toastReadyCelebration:'🎉 Order ready for pickup!', comboDiscount:'Combo Discount', readyPickup:'Ready for pickup',
-        orderAgain:'Order again', submitReview:'Submit review', choosePickup:'Pickup time', note:'Special notes',
+        orderAgain:'Order Again', submitReview:'Submit review', choosePickup:'Pickup time', note:'Special notes',
         recommended:'Recommended', confirmClearTitle:'Clear All Orders?', confirmClearMessage:'Permanently delete all orders?',
         confirmResetTitle:'Reset Menu?', confirmResetMessage:'Restore default menu?', toastNoOrders:'No orders to clear.',
         toastOrdersCleaned:'All orders cleared.', menuResetSuccess:'Menu reset to default.', editReview:'Edit', reviewPlaceholder:'How was it?',
@@ -1006,6 +1021,27 @@
         orderNotePlaceholder:'Special notes (optional)', adminNote:'Note', addNamePlaceholder:'Item name', addPricePlaceholder:'Price (¥)', addDescPlaceholder:'Description', addTagsPlaceholder:'Tags (comma)',
         ariaCartCount:'%s items in cart', ariaIncreaseQty:'Increase quantity', ariaDecreaseQty:'Decrease quantity', ariaRemoveItem:'Remove item',
         ariaClose:'Close', mapPlaceholder:'Google Maps location', each:'each',
+        customerName:'Your Name', phoneNumber:'Phone Number', orderMethod:'Order Method', pickup:'Pickup', delivery:'Delivery',
+        pickupLocation:'Pickup Location', deliveryAddress:'Delivery Address', building:'Building / Dormitory', roomNumber:'Room Number (optional)',
+        specialRequest:'Special Request', asap:'ASAP', selectTime:'Select Time',
+        gotenyamaCampus:'Gotenyama Campus', nakamiyaCampus:'Nakamiya Campus',
+        cafeteria:'Cafeteria', firstCafeteria:'1st Cafeteria', secondCafeteria:'2nd Cafeteria', frontICC:'Front ICC Restaurant',
+        confirmTitle:'Order Confirmed!', confirmOrderNumber:'Order #', confirmThankYou:'Thank you, ', confirmEstimate:'Estimated preparation time', confirmContact:'We\'ll contact you at', confirmPickupAt:'Pickup Location:',
+        confirmDeliveryAt:'Delivery Address:', confirmSeeYou:'Thank you for choosing MomentU! See you soon 🍙',
+        closeBtn:'Close', validationName:'Please enter your name.', validationPhone:'Please enter your phone number.',
+        validationPickupLocation:'Please select a pickup location.', validationDeliveryAddress:'Please enter a delivery address.',
+        orderPlacedTitle:'Order Placed!', orderPlacedMessage:'Your order #%s has been placed successfully.',
+        orderDetailTitle:'Order Details', customerInfo:'Customer Information', orderMethodLabel:'Order Method',
+        orderNumberLabel:'Order Number', dateTime:'Date & Time', campusLabel:'Campus', pickupLocationLabel:'Pickup Location',
+        deliveryAddressLabel:'Delivery Address', buildingDorm:'Building / Dormitory', roomNumberLabel:'Room Number',
+        specialRequestLabel:'Special Request', noSpecialRequest:'No special requests.', orderSummaryLabel:'Order Summary',
+        products:'Products', addonsLabel:'Add-ons', subtotal:'Subtotal', discount:'Discount', totalLabel:'Total',
+        statusLabel:'Status', feedbackTitle:'Customer Feedback', noFeedback:'No customer feedback yet.',
+        ratingLabel:'Rating', reviewLabel:'Review', dateSubmitted:'Date Submitted',
+        orderTimeline:'Order Timeline', orderPlacedTimeline:'Customer placed order', orderAccepted:'Order accepted',
+        preparingTimeline:'Preparing', readyTimeline:'Ready for pickup', completedTimeline:'Completed',
+        pendingTimeline:'Pending', cancelledTimeline:'Cancelled',
+        specialRequestPlaceholder:'Optional (e.g. No mayonnaise, Extra sauce, Allergies)',
       },
       ja: {
         ann1:'🍙 毎日焼きたてのおにぎらず — 早くて美味しい', ann2:'💰 ¥220から', ann3:'🕐 24時間営業 — いつでも注文OK', ann4:'🥬 毎日新鮮な食材', ann5:'⚡ 5分で受け取り可能',
@@ -1022,7 +1058,8 @@
         combo3:'3品以上', save50:'¥50割引', comboExample2:'例: 照り焼きチキン 3個 = ¥700',
         addonLabel:'サイドメニュー', addonTitle:'お食事を完成させよう', addonSub:'サイドを追加して満足度アップ。',
         misoSoup:'味噌汁', tea:'お茶',
-        cartLabel:'ご注文', cartTitle:'カート', checkout:'注文する', emptyCart:'カートは空です', emptyCartSub:'メニューから選んでください！',
+        cartLabel:'ご注文', cartTitle:'カート',
+        checkout:'注文する', emptyCart:'カートは空です', emptyCartSub:'メニューから選んでください！',
         orderLabel:'履歴', orderTitle:'注文履歴', emptyOrders:'注文履歴なし', emptyOrdersSub:'最初の注文を！',
         locLabel:'アクセス', locTitle:'店舗情報', locAddress:'東京都〇〇区大学通り1-2-3', locPhone:'03-1234-5678', locEmail:'hello@momentu.jp', locTransport:'大学駅から徒歩3分', locHours:'年中無休 · 24時間営業 · 出来たてをご提供',
         footerBrand:'厳選した食材で毎日手作りするおにぎらず。',
@@ -1040,7 +1077,7 @@
         toastStatusUpdated:'注文 #%s を %s に更新', toastReviewSubmitted:'⭐ レビューありがとう！',
         toastSelectRating:'評価を選択してください！', toastNewOrder:'🛎️ 新規注文！', toastCartCleaned:'利用不可商品を削除。',
         toastReadyCelebration:'🎉 受け取り可能！', comboDiscount:'コンボ割引', readyPickup:'受け取り可能',
-        orderAgain:'再注文', submitReview:'レビュー送信', choosePickup:'受け取り時間', note:'備考',
+        orderAgain:'もう一度注文', submitReview:'レビュー送信', choosePickup:'受け取り時間', note:'備考',
         recommended:'おすすめ', confirmClearTitle:'全注文削除？', confirmClearMessage:'本当に削除しますか？',
         confirmResetTitle:'メニューリセット？', confirmResetMessage:'デフォルトに戻しますか？', toastNoOrders:'削除する注文なし。',
         toastOrdersCleaned:'全注文削除済み。', menuResetSuccess:'メニューリセット完了。', editReview:'編集', reviewPlaceholder:'いかがでしたか？',
@@ -1050,6 +1087,27 @@
         orderNotePlaceholder:'特別な注意事項', adminNote:'備考', addNamePlaceholder:'商品名', addPricePlaceholder:'価格 (¥)', addDescPlaceholder:'説明', addTagsPlaceholder:'タグ (カンマ区切り)',
         ariaCartCount:'カートに%s個', ariaIncreaseQty:'数量を増やす', ariaDecreaseQty:'数量を減らす', ariaRemoveItem:'削除',
         ariaClose:'閉じる', mapPlaceholder:'Googleマップ', each:'各',
+        customerName:'お名前', phoneNumber:'電話番号', orderMethod:'受取方法', pickup:'受け取り', delivery:'デリバリー',
+        pickupLocation:'受け取り場所', deliveryAddress:'配送先住所', building:'建物・寮名', roomNumber:'部屋番号 (任意)',
+        specialRequest:'特別リクエスト', asap:'できるだけ早く', selectTime:'時間を選択',
+        gotenyamaCampus:'御殿山キャンパス', nakamiyaCampus:'中宮キャンパス',
+        cafeteria:'カフェテリア', firstCafeteria:'第一食堂', secondCafeteria:'第三食堂', frontICC:'ICCの前',
+        confirmTitle:'注文確定！', confirmOrderNumber:'注文番号 #', confirmThankYou:'ありがとうございます、', confirmEstimate:'調理時間の目安', confirmContact:'こちらにご連絡いたします', confirmPickupAt:'受け取り場所:',
+        confirmDeliveryAt:'配送先住所:', confirmSeeYou:'MomentUをご利用いただきありがとうございます！またお会いしましょう 🍙',
+        closeBtn:'閉じる', validationName:'お名前を入力してください。', validationPhone:'電話番号を入力してください。',
+        validationPickupLocation:'受け取り場所を選択してください。', validationDeliveryAddress:'配送先住所を入力してください。',
+        orderPlacedTitle:'注文完了！', orderPlacedMessage:'注文 #%s が正常に完了しました。',
+        orderDetailTitle:'注文詳細', customerInfo:'お客様情報', orderMethodLabel:'受取方法',
+        orderNumberLabel:'注文番号', dateTime:'日時', campusLabel:'キャンパス', pickupLocationLabel:'受け取り場所',
+        deliveryAddressLabel:'配送先住所', buildingDorm:'建物・寮名', roomNumberLabel:'部屋番号',
+        specialRequestLabel:'特別リクエスト', noSpecialRequest:'特別なリクエストはありません。', orderSummaryLabel:'注文内容',
+        products:'商品', addonsLabel:'トッピング', subtotal:'小計', discount:'割引', totalLabel:'合計',
+        statusLabel:'ステータス', feedbackTitle:'お客様の声', noFeedback:'まだお客様の声はありません。',
+        ratingLabel:'評価', reviewLabel:'レビュー', dateSubmitted:'投稿日',
+        orderTimeline:'注文タイムライン', orderPlacedTimeline:'注文を受け付けました', orderAccepted:'注文を承認しました',
+        preparingTimeline:'準備中', readyTimeline:'受け取り可能', completedTimeline:'完了',
+        pendingTimeline:'保留中', cancelledTimeline:'キャンセル',
+        specialRequestPlaceholder:'例: マヨネーズ抜き、ソース多め、アレルギー情報',
       }
     };
 
@@ -1231,16 +1289,64 @@
             <div class="summary-row"><span>Subtotal</span><span>${formatCurrency(subtotal)}</span></div>
             ${comboDiscount > 0 ? `<div class="summary-row" style="color:var(--orange);"><span>${t('comboDiscount')}</span><span>-${formatCurrency(comboDiscount)}</span></div>` : ''}
             <div class="summary-row total"><span>Total</span><span id="cartTotalDisplay">${formatCurrency(finalTotal)}</span></div>
-            <select class="checkout-select" id="pickupTime" aria-label="${t('choosePickup')}">
-              <option>12:00</option><option>12:15</option><option selected>12:30</option><option>12:45</option><option>13:00</option>
+
+            <!-- Customer Info Fields -->
+            <div style="margin-top:var(--space-4);">
+              <label style="font-weight:600; font-size:var(--text-xs); text-transform:uppercase; letter-spacing:0.8px; display:block; margin-bottom:var(--space-1); color:var(--text-secondary);">${t('customerName')}</label>
+              <input type="text" id="custName" class="search-input" placeholder="${t('customerName')}" style="margin-bottom:var(--space-3);" />
+              <label style="font-weight:600; font-size:var(--text-xs); text-transform:uppercase; letter-spacing:0.8px; display:block; margin-bottom:var(--space-1); color:var(--text-secondary);">${t('phoneNumber')}</label>
+              <input type="tel" id="custPhone" class="search-input" placeholder="${t('phoneNumber')}" style="margin-bottom:var(--space-3);" />
+            </div>
+
+            <!-- Order Method Toggle -->
+            <label style="font-weight:600; font-size:var(--text-xs); text-transform:uppercase; letter-spacing:0.8px; display:block; margin-bottom:var(--space-1); color:var(--text-secondary);">${t('orderMethod')}</label>
+            <div class="view-toggle" id="orderMethodToggle" style="margin-bottom:var(--space-3); width:100%; display:flex;">
+              <button class="active" data-method="pickup" style="flex:1;">${t('pickup')}</button>
+              <button data-method="delivery" style="flex:1;">${t('delivery')}</button>
+            </div>
+
+            <!-- Pickup Location (visible when pickup selected) -->
+            <div id="pickupLocationGroup" style="margin-bottom:var(--space-3);">
+              <label style="font-weight:600; font-size:var(--text-xs); text-transform:uppercase; letter-spacing:0.8px; display:block; margin-bottom:var(--space-1); color:var(--text-secondary);">${t('pickupLocation')}</label>
+              <select id="pickupLocation" class="checkout-select">
+                <option value="">-- ${t('selectTime')} --</option>
+                <optgroup label="${t('gotenyamaCampus')}">
+                  <option value="Gotenyama Cafeteria">${t('cafeteria')}</option>
+                </optgroup>
+                <optgroup label="${t('nakamiyaCampus')}">
+                  <option value="Nakamiya 1st Cafeteria">${t('firstCafeteria')}</option>
+                  <option value="Nakamiya 2nd Cafeteria">${t('secondCafeteria')}</option>
+                  <option value="Front ICC">${t('frontICC')}</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <!-- Delivery Address (visible when delivery selected) -->
+            <div id="deliveryAddressGroup" style="display:none; margin-bottom:var(--space-3);">
+              <label style="font-weight:600; font-size:var(--text-xs); text-transform:uppercase; letter-spacing:0.8px; display:block; margin-bottom:var(--space-1); color:var(--text-secondary);">${t('deliveryAddress')}</label>
+              <input type="text" id="deliveryAddress" class="search-input" placeholder="${t('deliveryAddress')}" style="margin-bottom:var(--space-2);" />
+              <input type="text" id="deliveryBuilding" class="search-input" placeholder="${t('building')}" style="margin-bottom:var(--space-2);" />
+              <input type="text" id="deliveryRoom" class="search-input" placeholder="${t('roomNumber')}" />
+            </div>
+
+            <!-- Pickup Time -->
+            <label style="font-weight:600; font-size:var(--text-xs); text-transform:uppercase; letter-spacing:0.8px; display:block; margin-bottom:var(--space-1); color:var(--text-secondary);">${t('choosePickup')}</label>
+            <select id="pickupTime" class="checkout-select" style="margin-bottom:var(--space-3);">
+              <option value="ASAP">${t('asap')}</option>
+              <option value="12:00">12:00</option><option value="12:15">12:15</option><option value="12:30">12:30</option>
+              <option value="12:45">12:45</option><option value="13:00">13:00</option>
             </select>
-            <textarea placeholder="${t('orderNotePlaceholder')}" id="orderNote" aria-label="${t('note')}"></textarea>
+
+            <!-- Special Request (placeholder only, empty) -->
+            <textarea id="orderNote" data-key="specialRequestPlaceholder" placeholder="${t('specialRequestPlaceholder')}" style="margin-bottom:var(--space-3);"></textarea>
+
             <button class="btn-checkout" id="checkoutBtn"><i class="fas fa-check-circle"></i> ${t('checkout')}</button>
           </div>
         </div>`;
       document.getElementById('navCartBadge').textContent = getCartCount();
       updateCartBadgeAria();
 
+      // Event listeners for quantity controls
       container.querySelectorAll('.qty-minus').forEach(btn => btn.addEventListener('click', () => {
         const cid = parseInt(btn.dataset.cid);
         const idx = cart.findIndex(c => c.cartItemId === cid);
@@ -1261,12 +1367,45 @@
         cart = cart.filter(c => c.cartItemId !== cid);
         saveData(); renderCart();
       }));
+
+      // Order method toggle logic
+      const methodBtns = container.querySelectorAll('#orderMethodToggle button');
+      const pickupGroup = container.querySelector('#pickupLocationGroup');
+      const deliveryGroup = container.querySelector('#deliveryAddressGroup');
+      methodBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          methodBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          if (btn.dataset.method === 'pickup') {
+            pickupGroup.style.display = 'block';
+            deliveryGroup.style.display = 'none';
+          } else {
+            pickupGroup.style.display = 'none';
+            deliveryGroup.style.display = 'block';
+          }
+        });
+      });
+
       const checkoutBtn = container.querySelector('#checkoutBtn');
       if (checkoutBtn) checkoutBtn.addEventListener('click', () => {
         if (cart.length === 0) return toast(t('toastEmpty'), 'error');
+        const name = document.getElementById('custName').value.trim();
+        const phone = document.getElementById('custPhone').value.trim();
+        const method = container.querySelector('#orderMethodToggle button.active')?.dataset.method;
+        const pickupLocation = document.getElementById('pickupLocation').value;
+        const deliveryAddress = document.getElementById('deliveryAddress')?.value.trim();
+        const deliveryBuilding = document.getElementById('deliveryBuilding')?.value.trim();
+        const deliveryRoom = document.getElementById('deliveryRoom')?.value.trim();
+        const note = document.getElementById('orderNote')?.value.trim();
+        const pickupTime = document.getElementById('pickupTime')?.value || 'ASAP';
+
+        // Validation
+        if (!name) { toast(t('validationName'), 'error'); return; }
+        if (!phone) { toast(t('validationPhone'), 'error'); return; }
+        if (method === 'pickup' && !pickupLocation) { toast(t('validationPickupLocation'), 'error'); return; }
+        if (method === 'delivery' && !deliveryAddress) { toast(t('validationDeliveryAddress'), 'error'); return; }
+
         const finalTotal = getFinalTotal();
-        const pickupTime = document.getElementById('pickupTime')?.value || '12:30';
-        const note = document.getElementById('orderNote')?.value || '';
         const order = {
           id: nextOrderId++,
           items: cart.map(c => ({ name: getItemById(c.menuItemId)?.name || 'Unknown', quantity: c.quantity, price: c.effectivePrice || c.basePrice, custom: c.customizations, sides: c.sides || [] })),
@@ -1275,10 +1414,16 @@
           timestamp: new Date().toLocaleString(),
           pickupTime,
           note,
+          customerName: name,
+          phone,
+          orderMethod: method,
+          pickupLocation: method === 'pickup' ? pickupLocation : null,
+          deliveryAddress: method === 'delivery' ? deliveryAddress : null,
+          deliveryBuilding: method === 'delivery' ? deliveryBuilding : null,
+          deliveryRoom: method === 'delivery' ? deliveryRoom : null,
           reviewed: false,
           rating: 0,
           reviewText: '',
-          customerName: 'Student',
           createdAt: Date.now(),
         };
         orders.push(order);
@@ -1287,9 +1432,8 @@
         renderCart();
         renderOrders();
         renderAdminDashboard();
-        toast(t('toastOrderPlaced'), 'success');
-        toast(t('toastNewOrder'), 'info');
         fireConfetti();
+        showOrderConfirmModal(order);
       });
       bounceCartBadge();
     }
@@ -1297,6 +1441,105 @@
       const badge = document.getElementById('navCartBadge');
       if (badge) badge.setAttribute('aria-label', t('ariaCartCount', getCartCount()));
     }
+
+    function showOrderConfirmModal(order) {
+      const modal = document.getElementById('orderConfirmModal');
+      const details = document.getElementById('orderConfirmDetails');
+      const name = order.customerName || '';
+      const orderNumber = order.id;
+      const method = order.orderMethod;
+      let locationText = '';
+      if (method === 'pickup') {
+        locationText = `<strong>${t('confirmPickupAt')}</strong> ${order.pickupLocation}`;
+      } else {
+        locationText = `<strong>${t('confirmDeliveryAt')}</strong> ${order.deliveryAddress}${order.deliveryBuilding ? ', ' + order.deliveryBuilding : ''}${order.deliveryRoom ? ', Room ' + order.deliveryRoom : ''}`;
+      }
+      details.innerHTML = `
+        <p>${t('confirmOrderNumber')}${orderNumber}</p>
+        <p>${t('confirmThankYou')}${name}!</p>
+        <p>${t('confirmEstimate')}: <strong>8–10 min</strong></p>
+        <p>${t('confirmContact')}: <strong>${order.phone}</strong></p>
+        <p>${locationText}</p>
+        <p>${t('confirmSeeYou')}</p>
+      `;
+      document.getElementById('orderConfirmTitle').innerHTML = `<i class="fas fa-check-circle"></i> ${t('confirmTitle')}`;
+      modal.classList.add('active');
+      document.getElementById('orderConfirmClose').focus();
+    }
+
+    document.getElementById('orderConfirmClose').addEventListener('click', () => {
+      document.getElementById('orderConfirmModal').classList.remove('active');
+    });
+    document.getElementById('orderConfirmAgain').addEventListener('click', () => {
+      document.getElementById('orderConfirmModal').classList.remove('active');
+      if (orders.length > 0) {
+        const lastOrder = orders[orders.length-1];
+        lastOrder.items.forEach(item => {
+          const mi = menuItems.find(i => i.name === item.name);
+          if (mi) {
+            const custom = item.custom || { rice:'White', protein:'Tuna', sauce:'Sriracha', addons:[] };
+            const sides = item.sides || [];
+            const existing = cart.find(c => c.menuItemId === mi.id && c.customizations.rice === custom.rice && c.customizations.protein === custom.protein && c.customizations.sauce === custom.sauce && JSON.stringify(c.customizations.addons) === JSON.stringify(custom.addons) && JSON.stringify(c.sides) === JSON.stringify(sides));
+            if (existing) existing.quantity += item.quantity;
+            else {
+              const sp = sides.reduce((s,side) => { const opt = document.querySelector(`#optSides [data-value="${side}"]`); return s + (opt ? parseInt(opt.dataset.price) : 0); }, 0);
+              cart.push({ menuItemId: mi.id, customizations: custom, sides: sides, quantity: item.quantity, basePrice: mi.price, effectivePrice: mi.price + sp, cartItemId: ++cartItemIdCounter });
+            }
+          }
+        });
+        saveData(); renderCart(); renderOrders();
+        document.getElementById('cart').scrollIntoView({ behavior:'smooth' });
+      }
+    });
+
+    /* ── ADMIN ORDER DETAIL MODAL ── */
+    function showOrderDetailModal(orderId) {
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+      const modal = document.getElementById('orderDetailModal');
+      const content = document.getElementById('orderDetailContent');
+      const methodText = order.orderMethod === 'pickup' ? t('pickup') : t('delivery');
+      let locationInfo = '';
+      if (order.orderMethod === 'pickup') {
+        const campus = order.pickupLocation?.includes('Gotenyama') ? t('gotenyamaCampus') : t('nakamiyaCampus');
+        locationInfo = `<strong>${t('campusLabel')}:</strong> ${campus}<br><strong>${t('pickupLocationLabel')}:</strong> ${order.pickupLocation}`;
+      } else {
+        locationInfo = `<strong>${t('deliveryAddressLabel')}:</strong> ${order.deliveryAddress}<br>${order.deliveryBuilding ? '<strong>' + t('buildingDorm') + ':</strong> ' + order.deliveryBuilding + '<br>' : ''}${order.deliveryRoom ? '<strong>' + t('roomNumberLabel') + ':</strong> ' + order.deliveryRoom : ''}`;
+      }
+      const noteDisplay = order.note ? order.note : `<em>${t('noSpecialRequest')}</em>`;
+      const itemsList = order.items.map(i => `${i.name} ×${i.quantity} (${formatCurrency(i.price)})`).join('<br>');
+      const subtotal = order.total + (getComboDiscountForOrder(order) || 0);
+      const discount = getComboDiscountForOrder(order) || 0;
+      let reviewHtml = '';
+      if (order.reviewed && order.rating > 0) {
+        const stars = '★'.repeat(order.rating) + '☆'.repeat(5-order.rating);
+        reviewHtml = `<strong>${t('ratingLabel')}:</strong> ${stars}<br><strong>${t('reviewLabel')}:</strong> ${order.reviewText || '—'}<br><strong>${t('dateSubmitted')}:</strong> ${new Date(order.reviewTimestamp).toLocaleString()}`;
+      } else {
+        reviewHtml = `<em>${t('noFeedback')}</em>`;
+      }
+      content.innerHTML = `
+        <div style="margin-bottom:var(--space-4);"><strong>${t('customerInfo')}</strong><br>${order.customerName || '—'}<br>${order.phone || '—'}</div>
+        <div style="margin-bottom:var(--space-4);"><strong>${t('orderNumberLabel')}:</strong> #${order.id}<br><strong>${t('dateTime')}:</strong> ${order.timestamp}</div>
+        <div style="margin-bottom:var(--space-4);"><strong>${t('orderMethodLabel')}:</strong> ${methodText}<br>${locationInfo}</div>
+        <div style="margin-bottom:var(--space-4);"><strong>${t('pickupTime')}:</strong> ${order.pickupTime || 'ASAP'}</div>
+        <div style="margin-bottom:var(--space-4);"><strong>${t('specialRequestLabel')}:</strong> ${noteDisplay}</div>
+        <div style="margin-bottom:var(--space-4);"><strong>${t('orderSummaryLabel')}</strong><br>${itemsList}<br><strong>${t('subtotal')}:</strong> ${formatCurrency(subtotal)}<br>${discount > 0 ? '<strong>' + t('discount') + ':</strong> -' + formatCurrency(discount) + '<br>' : ''}<strong>${t('totalLabel')}:</strong> ${formatCurrency(order.total)}</div>
+        <div style="margin-bottom:var(--space-4);"><strong>${t('statusLabel')}:</strong> <span class="status-badge ${order.status}">${t(order.status === 'received' ? 'statusReceived' : order.status === 'preparing' ? 'statusPreparing' : 'statusReady')}</span></div>
+        <div style="margin-bottom:var(--space-4);"><strong>${t('feedbackTitle')}</strong><br>${reviewHtml}</div>
+      `;
+      modal.classList.add('active');
+      document.getElementById('orderDetailClose').focus();
+    }
+    function getComboDiscountForOrder(order) {
+      const totalQty = order.items.reduce((s, i) => s + i.quantity, 0);
+      if (totalQty >= 3) return 50;
+      if (totalQty >= 2) return 20;
+      return 0;
+    }
+    document.getElementById('orderDetailClose').addEventListener('click', () => {
+      document.getElementById('orderDetailModal').classList.remove('active');
+    });
+
     function renderOrders() {
       const container = document.getElementById('ordersList');
       if (!container) return;
@@ -1313,7 +1556,7 @@
         <div class="cart-item-card" style="flex-direction:column;align-items:flex-start;margin-bottom:12px;">
           <div style="display:flex;justify-content:space-between;width:100%;"><strong>#${o.id}</strong><span class="status-badge ${st.c}">${st.l}</span></div>
           <div style="font-size:14px;color:var(--text-secondary);">${itemsStr}</div>
-          <div style="font-size:12px;color:var(--text-tertiary);">${o.timestamp} · ${t('readyPickup')}: ${o.pickupTime || '12:30'} · Total: ${formatCurrency(o.total)}</div>
+          <div style="font-size:12px;color:var(--text-tertiary);">${o.timestamp} · ${t('readyPickup')}: ${o.pickupTime||'12:30'} · Total: ${formatCurrency(o.total)}</div>
           ${o.note ? `<div style="font-size:12px;color:var(--text-secondary);">📝 ${o.note}</div>` : ''}
           <button class="btn-customize btn-reorder" data-id="${o.id}" style="margin-top:8px;"><i class="fas fa-redo"></i> ${t('orderAgain')}</button>
           ${showReview ? `
@@ -1414,7 +1657,7 @@
           reviewHtml = `<span style="color:var(--text-tertiary);">—</span>`;
         }
         return `
-          <tr>
+          <tr data-order-id="${o.id}">
             <td><strong>#${o.id}</strong></td>
             <td>${o.customerName || 'Student'}</td>
             <td>${o.items.map(i => i.name).join(', ')}</td>
@@ -1432,8 +1675,17 @@
           </tr>
         `;
       }).join('');
+      // Attach click listeners to open order details
+      tbody.querySelectorAll('tr').forEach(row => {
+        row.addEventListener('click', (e) => {
+          if (e.target.tagName === 'BUTTON') return; // don't open detail if clicking action button
+          const id = parseInt(row.dataset.orderId);
+          if (id) showOrderDetailModal(id);
+        });
+      });
       tbody.querySelectorAll('.btn-update-status:not([disabled])').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
           const id = parseInt(btn.dataset.id);
           const order = orders.find(o => o.id === id);
           if (!order) return;
@@ -1543,6 +1795,8 @@
         if (e.key === 'Escape') {
           if (modalElement.id === 'customModal') closeModal();
           if (modalElement.id === 'confirmModal') document.getElementById('confirmModal').classList.remove('active');
+          if (modalElement.id === 'orderConfirmModal') document.getElementById('orderConfirmModal').classList.remove('active');
+          if (modalElement.id === 'orderDetailModal') document.getElementById('orderDetailModal').classList.remove('active');
         }
       });
     }
@@ -1700,15 +1954,17 @@
       setupModalListeners();
       trapFocusInModal(document.getElementById('customModal'));
       trapFocusInModal(document.getElementById('confirmModal'));
+      trapFocusInModal(document.getElementById('orderConfirmModal'));
+      trapFocusInModal(document.getElementById('orderDetailModal'));
       setupScrollReveal();
       setupNavScroll();
       setupFilterKeyboard();
       if (orders.length === 0) {
         const now = Date.now();
         orders.push(
-          { id: nextOrderId++, items: [{ name:'Spicy Tuna', quantity:2, price:290, custom:{ rice:'White', protein:'Tuna', sauce:'Sriracha', addons:['Avocado'] }, sides:['Miso Soup'] }, { name:'Teriyaki Chicken', quantity:1, price:250, custom:{ rice:'Brown', protein:'Chicken', sauce:'Teriyaki', addons:['Sesame'] }, sides:['Tea'] }], total:830-50, status:'ready', timestamp: new Date(now-3600000).toLocaleString(), pickupTime:'12:15', reviewed:true, rating:5, reviewText:'Amazing!', note:'Extra spicy', createdAt:now-3600000, customerName:'Sara Young' },
-          { id: nextOrderId++, items: [{ name:'Veggie Rainbow', quantity:1, price:220, custom:{ rice:'Mixed', protein:'Tofu', sauce:'None', addons:['Kimchi'] }, sides:[] }], total:220, status:'preparing', timestamp: new Date(now-1800000).toLocaleString(), pickupTime:'12:45', reviewed:false, rating:0, reviewText:'', note:'No onions', createdAt:now-1800000, customerName:'John Doe' },
-          { id: nextOrderId++, items: [{ name:'Salmon Miso', quantity:1, price:390, custom:{ rice:'White', protein:'Tuna', sauce:'Teriyaki', addons:['Cheese'] }, sides:['Miso Soup'] }], total:490, status:'received', timestamp: new Date(now-600000).toLocaleString(), pickupTime:'13:00', reviewed:false, rating:0, reviewText:'', note:'', createdAt:now-600000, customerName:'Alice Doe' }
+          { id: nextOrderId++, items: [{ name:'Spicy Tuna', quantity:2, price:290, custom:{ rice:'White', protein:'Tuna', sauce:'Sriracha', addons:['Avocado'] }, sides:['Miso Soup'] }, { name:'Teriyaki Chicken', quantity:1, price:250, custom:{ rice:'Brown', protein:'Chicken', sauce:'Teriyaki', addons:['Sesame'] }, sides:['Tea'] }], total:830-50, status:'ready', timestamp: new Date(now-3600000).toLocaleString(), pickupTime:'12:15', reviewed:true, rating:5, reviewText:'Amazing!', note:'Extra spicy', createdAt:now-3600000, customerName:'Sara Young', phone:'090-1234-5678', orderMethod:'pickup', pickupLocation:'Gotenyama Cafeteria' },
+          { id: nextOrderId++, items: [{ name:'Veggie Rainbow', quantity:1, price:220, custom:{ rice:'Mixed', protein:'Tofu', sauce:'None', addons:['Kimchi'] }, sides:[] }], total:220, status:'preparing', timestamp: new Date(now-1800000).toLocaleString(), pickupTime:'12:45', reviewed:false, rating:0, reviewText:'', note:'No onions', createdAt:now-1800000, customerName:'John Doe', phone:'080-9876-5432', orderMethod:'delivery', deliveryAddress:'1-2-3 University St', deliveryBuilding:'Dorm A', deliveryRoom:'101' },
+          { id: nextOrderId++, items: [{ name:'Salmon Miso', quantity:1, price:390, custom:{ rice:'White', protein:'Tuna', sauce:'Teriyaki', addons:['Cheese'] }, sides:['Miso Soup'] }], total:490, status:'received', timestamp: new Date(now-600000).toLocaleString(), pickupTime:'13:00', reviewed:false, rating:0, reviewText:'', note:'', createdAt:now-600000, customerName:'Alice Doe', phone:'070-5555-1234', orderMethod:'pickup', pickupLocation:'Nakamiya 1st Cafeteria' }
         );
         saveData();
       }
