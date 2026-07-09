@@ -2363,6 +2363,8 @@
         confirmResetMessage: 'This will restore the default menu and remove any custom items. Are you sure?',
         confirmYes: 'Yes, proceed',
         confirmNo: 'Cancel',
+        // Added for the note column
+        adminNote: 'Note', // to distinguish from the note placeholder
       },
       ja: {
         flash: 'フラッシュセール',
@@ -2464,6 +2466,7 @@
         confirmResetMessage: 'デフォルトのメニューに戻し、カスタムアイテムは削除されます。よろしいですか？',
         confirmYes: 'はい、実行する',
         confirmNo: 'キャンセル',
+        adminNote: '備考',
       }
     };
 
@@ -3107,6 +3110,9 @@
       renderAdminOrders();
     }
 
+    // ────────────────────────────────────────────────────────
+    // ADMIN ORDERS — now with a "Note" column
+    // ────────────────────────────────────────────────────────
     function renderAdminOrders() {
       if (!adminOrderList) return;
       let filtered = orders;
@@ -3127,6 +3133,7 @@
               <th>${t('customer')}</th>
               <th>${t('items')}</th>
               <th>${t('qty')}</th>
+              <th>${t('adminNote')}</th>
               <th>${t('total')}</th>
               <th>${t('status')}</th>
               <th>${t('time')}</th>
@@ -3159,12 +3166,16 @@
           reviewHtml = `<span style="color:#9ca3af;font-size:12px;">—</span>`;
         }
 
+        // Note column content
+        const noteContent = o.note ? o.note : '—';
+
         tableHtml += `
           <tr>
             <td><strong>#${o.id}</strong></td>
             <td><span class="customer-name"><i class="fas fa-user"></i> ${name}</span></td>
             <td>${itemsStr}</td>
             <td>${totalQty}</td>
+            <td style="max-width:120px; word-break:break-word; font-size:12px; color:#6b7280;">${noteContent}</td>
             <td>${formatCurrency(o.total)}</td>
             <td><span class="status-badge ${o.status}" style="background:${color}15;color:${color};"><i class="fas ${icon}"></i> ${statusLabel}</span></td>
             <td><span class="order-time"><i class="far fa-clock"></i> ${o.timestamp}</span><br><span style="font-size:10px;color:#9ca3af;">⏳ ${waitDisplay}</span></td>
